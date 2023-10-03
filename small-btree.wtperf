@@ -1,0 +1,10 @@
+# wtperf options file: medium btree configuration
+#conn_config="cache_size=128M"
+conn_config="cache_size=128M,direct_io=(data,checkpoint)"
+table_config="type=file,,checksum=off"
+icount=80000000
+report_interval=5
+run_time=30
+populate_threads=1
+verbose=5
+threads=((count=64,reads=1))

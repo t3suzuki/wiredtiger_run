@@ -1,0 +1,21 @@
+ENVS=LD_LIBRARY_PATH=/home/tomoya-s/work/github/argobots/install/lib ABT_THREAD_STACKSIZE=65536  LD_PRELOAD=/home/tomoya-s/work/pthabt/newlib/mylib.so
+
+DEBUG=LIBDEBUG=/home/tomoya-s/work/pthabt/newlib/debug.so
+
+WTPERF=./bench/wtperf/wtperf
+
+#EXE=$(DEBUG) $(ENVS) $(WTPERF)
+EXE=$(ENVS) $(WTPERF)
+#EXE=$(WTPERF)
+#EXE=taskset -c 0 $(WTPERF)
+
+#CONF=./medium-btree.wtperf
+CONF=./small-btree.wtperf
+
+run:
+	dd if=/dev/random of=./myfs_superblock count=1 bs=128M
+	$(EXE) -O $(CONF)
+
+perf:
+	perf record -D 35000 -g -C 0 $(EXE) -O $(CONF)
+
