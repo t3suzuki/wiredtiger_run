@@ -1,4 +1,4 @@
-ENVS=LD_LIBRARY_PATH=/home/tomoya-s/work/github/argobots/install/lib ABT_THREAD_STACKSIZE=65536  LD_PRELOAD=/home/tomoya-s/work/pthabt/newlib/mylib.so
+ENVS=LD_LIBRARY_PATH=/home/tomoya-s/work/github/argobots/install/lib ABT_THREAD_STACKSIZE=4194304  LD_PRELOAD=/home/tomoya-s/work/pthabt/newlib/mylib.so
 
 DEBUG=LIBDEBUG=/home/tomoya-s/work/pthabt/newlib/debug.so
 
@@ -17,5 +17,5 @@ run:
 	$(EXE) -O $(CONF)
 
 perf:
-	perf record -D 35000 -g -C 0 $(EXE) -O $(CONF)
+	perf record -D 50000 -g -C 0 $(EXE) -O $(CONF)
 
