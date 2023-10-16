@@ -7,8 +7,8 @@ MYLIB_PATH = "/home/tomoya-s/work/pthabt/newlib"
 def get_wtperf_cmd(mode, op, n_th, cache_size, db_path):
     key_size = 32
     val_size = 512
-    num = 400 * 1000 * 1000
-    duration = 50
+    num = 250 * 1000 * 1000
+    duration = 120
     
     if op == "set":
         create = "true"
@@ -27,6 +27,7 @@ populate_threads=1
 verbose=5
 create={create}
 threads=((count={n_th},reads=1))
+warmup=60
 ''').format(session_max=n_th, create=create, n_th=n_th, num=num, key_size=key_size, val_size=val_size, duration=duration)
 
     cfg_filename = "wtperf.cfg"
@@ -40,9 +41,9 @@ threads=((count={n_th},reads=1))
 
 def run(mode, op, n_core, n_th, cache_size):
     if mode == "abt":
-        db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_abt400m"
+        db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_abt250m"
     else:
-        db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_native400m"
+        db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_native250m"
     
     if op == "set":
         print("We are modifying database {}. Are you Sure? (Y/N)".format(db_path))
@@ -58,15 +59,15 @@ def run(mode, op, n_core, n_th, cache_size):
         my_env["ABT_THREAD_STACKSIZE"] = "65536"
         cmd = get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
     else:
-        #cmd = "taskset -c 0-{} ".format(n_core-1) + get_wtperf_cmd(mode, op, n_th, cache_size)
-        cmd = get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
+        cmd = "taskset -c 0-{} ".format(n_core-1) + get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
+        #cmd = get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
 
     print(cmd)
     process = subprocess.run(cmd.split(), env=my_env)
 
 
-run("native", "set", 1, 1, 1024*1024)
+#run("native", "set", 1, 1, 1024*1024)
 for n_core in [1,2,4,8]:
-    for n_pth in [64]:
+    for n_pth in [8*n_core]:
         run("native", "get", n_core, n_pth, 1024*1024)
     
