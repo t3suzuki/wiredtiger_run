@@ -4,7 +4,7 @@ import textwrap
 ABT_PATH = "/home/tomoya-s/work/github/argobots/install"
 MYLIB_PATH = "/home/tomoya-s/work/pthabt/newlib"
 
-def get_wtperf_cmd(mode, op, n_th, cache_size, db_path):
+def get_wtperf_cmd(op, n_th, cache_size, db_path):
     key_size = 32
     val_size = 512
     num = 250 * 1000 * 1000
@@ -57,9 +57,9 @@ def run(mode, op, n_core, n_th, cache_size):
         my_env["LD_PRELOAD"] = MYLIB_PATH + "/mylib.so"
         my_env["LD_LIBRARY_PATH"] = ABT_PATH + "/lib"
         my_env["ABT_THREAD_STACKSIZE"] = "65536"
-        cmd = get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
+        cmd = get_wtperf_cmd(op, n_th, cache_size, db_path)
     else:
-        cmd = "taskset -c 0-{} ".format(n_core-1) + get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
+        cmd = "taskset -c 0-{} ".format(n_core-1) + get_wtperf_cmd(op, n_th, cache_size, db_path)
         #cmd = get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
 
     print(cmd)
@@ -68,6 +68,6 @@ def run(mode, op, n_core, n_th, cache_size):
 
 #run("native", "set", 1, 1, 1024*1024)
 for n_core in [1,2,4,8]:
-    for n_pth in [8*n_core]:
-        run("native", "get", n_core, n_pth, 1024*1024)
+    for n_pth in [8,16,32,64,128,256]:
+        run("native", "get", n_core, n_pth, 20*1024*1024*1024)
     
