@@ -16,7 +16,7 @@ def get_wtperf_cmd(op, n_th, cache_size, db_path):
         create = "false"
         
     conf_str = textwrap.dedent('''
-conn_config="cache_size=20G,direct_io=(data,checkpoint),eviction=(threads_min=4,threads_max=20),eviction_target=60,session_max={session_max}"
+conn_config="cache_size={cache_size},direct_io=(data,checkpoint),eviction=(threads_min=4,threads_max=20),eviction_target=60,session_max={session_max}"
 table_config="type=file,leaf_page_max=4k,internal_page_max=4k,checksum=on"
 icount={num}
 key_sz={key_size}
@@ -28,7 +28,7 @@ verbose=5
 create={create}
 threads=((count={n_th},reads=1))
 warmup=60
-''').format(session_max=n_th, create=create, n_th=n_th, num=num, key_size=key_size, val_size=val_size, duration=duration)
+''').format(session_max=n_th, create=create, n_th=n_th, num=num, key_size=key_size, val_size=val_size, duration=duration, cache_size=cache_size)
 
     cfg_filename = "wtperf.cfg"
     with open(cfg_filename, "w") as cfg_file:
@@ -41,7 +41,7 @@ warmup=60
 
 def run(mode, op, n_core, n_th, cache_size):
     if mode == "abt":
-        db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_abt250m"
+        db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_abtOK250m"
     else:
         db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_native250m"
     
@@ -66,8 +66,11 @@ def run(mode, op, n_core, n_th, cache_size):
     process = subprocess.run(cmd.split(), env=my_env)
 
 
-#run("native", "set", 1, 1, 1024*1024)
-for n_core in [1,2,4,8]:
-    for n_pth in [8,16,32,64,128,256]:
-        run("native", "get", n_core, n_pth, 20*1024*1024*1024)
+run("abt", "set", 1, 1, 1024*1024)
+#run("natve", "set", 1, 1, 1024*1024)
+
+#for n_core in [4,8]:
+    #for n_pth in [8,16,32,64,128,256]:
+#    for n_pth in [32,64,128,256]:
+#        run("native", "get", n_core, n_pth, "15G")
     
