@@ -4,7 +4,8 @@ import textwrap
 #ABT_PATH = "/home/tomoya-s/work/github/argobots/install"
 #ABT_PATH = "/home/tomoya-s/work/github/ppopp21-preemption-artifact/argobots/install"
 ABT_PATH = "/home/tomoya-s/mountpoint2/tomoya-s/argobots/install"
-MYLIB_PATH = "/home/tomoya-s/work/pthabt/newlib"
+#MYLIB_PATH = "/home/tomoya-s/mountpoint2/tomoya-s/pthabt/newlib"
+MYLIB_PATH = "/home/tomoya-s/work/pthabt2/newlib"
 
 def get_wtperf_cmd(op, n_th, cache_size, db_path):
     key_size = 32
@@ -43,7 +44,7 @@ warmup=60
 
 def run(mode, op, n_core, n_th, cache_size):
     if mode == "abt":
-        db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_abt250m"
+        db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_abt250m_1025"
     else:
         db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_native250m"
     
@@ -54,12 +55,17 @@ def run(mode, op, n_core, n_th, cache_size):
 
     my_env = os.environ.copy()
     if mode == "abt":
-        mylib_build_cmd = "make -C {} ABT_PATH={} N_TH={}".format(MYLIB_PATH, ABT_PATH, n_core)
+        drive_ids = ["20"]
+        mylib_build_cmd = "make -C {} ABT_PATH={} N_TH={} ND={}".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
         process = subprocess.run(mylib_build_cmd.split())
         my_env["LD_PRELOAD"] = MYLIB_PATH + "/mylib.so"
         my_env["LD_LIBRARY_PATH"] = ABT_PATH + "/lib"
         #my_env["ABT_PREEMPTION_INTERVAL_USEC"] = "1000000"
         #my_env["ABT_THREAD_STACKSIZE"] = "65536"
+        my_env["ABT_THREAD_STACKSIZE"] = "1048576"
+        my_env["HOOKED_FILENAME"] = db_path + "/test.wt"
+        my_env["DRIVE_IDS"] = " ".join(drive_ids)
+        my_env["MYFS_SUPERBLOCK_PATH"] = "/root/myfs_superblock1025"
         #my_env["LIBDEBUG"] = MYLIB_PATH + "/debug.so"
         cmd = get_wtperf_cmd(op, n_th, cache_size, db_path)
     else:
@@ -67,13 +73,19 @@ def run(mode, op, n_core, n_th, cache_size):
         #cmd = get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
 
     print(cmd)
-    process = subprocess.run(cmd.split(), env=my_env)
+    res = subprocess.run(cmd.split(), env=my_env, capture_output=False)
+    #print("captured stdout: {}".format(res.stdout.decode()))
+    #print("captured stderr: {}".format(res.stderr.decode()))
 
 
 #run("abt", "set", 1, 1, 1024*1024)
 #run("natve", "set", 1, 1, 1024*1024)
 
-run("native", "get", 8, 64, "12G")
+#run("abt", "get", 1, 1, 1024*1024)
+#run("abt", "get", 1, 1, "12G")
+#run("abt", "get", 8, 2, "12G")
+run("abt", "get", 8, 64, "12G")
+#run("native", "get", 8, 64, "12G")
 #run("native", "get", 1, 32, "12G")
 #run("native", "get", 1, 1, "12G")
 #for i in range(0, 10):
