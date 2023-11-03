@@ -2,16 +2,16 @@ import subprocess, os
 import textwrap
 
 #ABT_PATH = "/home/tomoya-s/work/github/argobots/install"
-#ABT_PATH = "/home/tomoya-s/work/github/ppopp21-preemption-artifact/argobots/install"
-ABT_PATH = "/home/tomoya-s/mountpoint2/tomoya-s/argobots/install"
-#MYLIB_PATH = "/home/tomoya-s/mountpoint2/tomoya-s/pthabt/newlib"
-MYLIB_PATH = "/home/tomoya-s/work/pthabt2/newlib"
+ABT_PATH = "/home/tomoya-s/work/github/ppopp21-preemption-artifact/argobots/install"
+#ABT_PATH = "/home/tomoya-s/mountpoint2/tomoya-s/argobots/install"
+MYLIB_PATH = "/home/tomoya-s/mountpoint2/tomoya-s/pthabt/newlib"
+#MYLIB_PATH = "/home/tomoya-s/work/pthabt2/newlib"
 
 def get_wtperf_cmd(op, n_th, cache_size, db_path):
     key_size = 32
     val_size = 512
     num = 250 * 1000 * 1000
-    duration = 120
+    duration = 240
     
     if op == "set":
         create = "true"
@@ -43,8 +43,8 @@ warmup=60
 
 
 def run(mode, op, n_core, n_th, cache_size):
-    if mode == "abt":
-        db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_abt250m_1025"
+    if mode == "abt" or mode == "pthpth":
+        db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_abt250m"
     else:
         db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_native250m"
     
@@ -55,21 +55,33 @@ def run(mode, op, n_core, n_th, cache_size):
 
     my_env = os.environ.copy()
     if mode == "abt":
-        drive_ids = ["20"]
-        mylib_build_cmd = "make -C {} ABT_PATH={} N_TH={} ND={}".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
+        drive_ids = ["0000:07:00.0","0000:0a:00.0"]
+        mylib_build_cmd = "make -C {} ABT_PATH={} N_CORE={} ND={} USE_PREEMPT=0".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
         process = subprocess.run(mylib_build_cmd.split())
         my_env["LD_PRELOAD"] = MYLIB_PATH + "/mylib.so"
         my_env["LD_LIBRARY_PATH"] = ABT_PATH + "/lib"
-        #my_env["ABT_PREEMPTION_INTERVAL_USEC"] = "1000000"
+        my_env["ABT_PREEMPTION_INTERVAL_USEC"] = "10000000"
         #my_env["ABT_THREAD_STACKSIZE"] = "65536"
-        my_env["ABT_THREAD_STACKSIZE"] = "1048576"
+        #my_env["ABT_THREAD_STACKSIZE"] = "1048576"
         my_env["HOOKED_FILENAME"] = db_path + "/test.wt"
-        my_env["DRIVE_IDS"] = " ".join(drive_ids)
-        my_env["MYFS_SUPERBLOCK_PATH"] = "/root/myfs_superblock1025"
+        my_env["DRIVE_IDS"] = "_".join(drive_ids)
+        my_env["MYFS_SUPERBLOCK_PATH"] = "/root/myfs_superblock"
+        #my_env["LIBDEBUG"] = MYLIB_PATH + "/debug.so"
+        cmd = get_wtperf_cmd(op, n_th, cache_size, db_path)
+    elif mode == "pthpth":
+        drive_ids = ["0000:07:00.0","0000:0a:00.0"]
+        mylib_build_cmd = "make pth -C {} ABT_PATH={} N_CORE={} ND={} USE_PREEMPT=1".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
+        process = subprocess.run(mylib_build_cmd.split())
+        
+        my_env["LD_PRELOAD"] = MYLIB_PATH + "/pthpth.so"
+        my_env["HOOKED_FILENAME"] = db_path + "/test.wt"
+        my_env["DRIVE_IDS"] = "_".join(drive_ids)
+        my_env["MYFS_SUPERBLOCK_PATH"] = "/root/myfs_superblock"
         #my_env["LIBDEBUG"] = MYLIB_PATH + "/debug.so"
         cmd = get_wtperf_cmd(op, n_th, cache_size, db_path)
     else:
-        cmd = "taskset -c 0-{} ".format(n_core-1) + get_wtperf_cmd(op, n_th, cache_size, db_path)
+        #cmd = "taskset -c 0-{} ".format(n_core-1) + get_wtperf_cmd(op, n_th, cache_size, db_path)
+        cmd = get_wtperf_cmd(op, n_th, cache_size, db_path)
         #cmd = get_wtperf_cmd(mode, op, n_th, cache_size, db_path)
 
     print(cmd)
@@ -84,9 +96,11 @@ def run(mode, op, n_core, n_th, cache_size):
 #run("abt", "get", 1, 1, 1024*1024)
 #run("abt", "get", 1, 1, "12G")
 #run("abt", "get", 8, 2, "12G")
-run("abt", "get", 8, 64, "12G")
+#run("abt", "get", 8, 64, "12G")
 #run("native", "get", 8, 64, "12G")
 #run("native", "get", 1, 32, "12G")
+#run("pthpth", "get", 8, 64, "12G")
+#run("abt", "get", 8, 64, "12G")
 #run("native", "get", 1, 1, "12G")
 #for i in range(0, 10):
 #    run("abt", "get", 8, 64, "12G")
@@ -97,9 +111,24 @@ run("abt", "get", 8, 64, "12G")
 #         run("abt", "get", n_core, n_pth, "12G")
 #         run("native", "get", n_core, n_pth, "12G")
   
-# for n_core in [1,2,4,8]:
-#     for n_pth in [16,32,64,128,256]:
-#         run("abt", "get", n_core, n_pth, "12G")
+#for n_core in [1,2,4,8]:
+#    for n_pth in [8,16,32,64,128]:
+#        run("abt", "get", n_core, n_pth, "12G")
+
+#for n_core in [8]:
+#    for n_pth in [16,32,64,128,256]:
+#        run("abt", "get", n_core, n_pth, "12G")
+
+for k in range(0, 16):
+    for n_core in [8]:
+        for n_pth in [32,64,128,256]:
+            run("native", "get", n_core, n_pth, "12G")
+    for n_core in [8]:
+        for n_pth in [32,64,128,256]:
+            run("abt", "get", n_core, n_pth, "12G")
+    for n_core in [8]:
+        for n_pth in [32,64,128,256]:
+            run("pthpth", "get", n_core, n_pth, "12G")
         
 # for n_core in [1,2,4,8]:
 #     for n_pth in [8,16,32,64,128]:
