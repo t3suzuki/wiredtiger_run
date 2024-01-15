@@ -53,13 +53,13 @@ def run(mode, op, n_core, n_th, cache_size):
         x = input()
         assert x == "y"
 
-    subprocess.run("chcpu -e 1-{}".format(n_core-1).split())
-    subprocess.run("chcpu -d {}-39".format(n_core).split())
+    subprocess.run("sudo chcpu -e 0-{}".format(n_core-1).split())
+    subprocess.run("sudo chcpu -d {}-39".format(n_core).split())
     
     my_env = os.environ.copy()
     drive_ids = ["0000:05:00.0","0000:06:00.0"]
     if mode == "abt":
-        mylib_build_cmd = "make -C {} ABT_PATH={} N_CORE={} ND={} USE_PREEMPT=0".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
+        mylib_build_cmd = "make -C {} ABT_PATH={} N_CORE={} ND={} USE_PREEMPT=1".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
         process = subprocess.run(mylib_build_cmd.split())
         my_env["LD_PRELOAD"] = MYLIB_PATH + "/mylib.so"
         my_env["LD_LIBRARY_PATH"] = ABT_PATH + "/lib"
@@ -81,6 +81,13 @@ def run(mode, op, n_core, n_th, cache_size):
         my_env["MYFS_SUPERBLOCK_PATH"] = "/root/myfs_superblock"
         #my_env["LIBDEBUG"] = MYLIB_PATH + "/debug.so"
         cmd = get_wtperf_cmd(op, n_th, cache_size, db_path)
+    elif mode == "io_uring":
+        mylib_build_cmd = "make -C {} ABT_PATH={} N_CORE={} USE_PREEMPT=0 USE_IO_URING=1".format(MYLIB_PATH, ABT_PATH, n_core)
+        process = subprocess.run(mylib_build_cmd.split())
+        my_env["LD_PRELOAD"] = MYLIB_PATH + "/mylib.so"
+        my_env["HOOKED_FILENAME"] = db_path + "/test.wt"
+        #my_env["LIBDEBUG"] = MYLIB_PATH + "/debug.so"
+        cmd = get_wtperf_cmd(op, n_th, cache_size, db_path)
     else:
         #cmd = "taskset -c 0-{} ".format(n_core-1) + get_wtperf_cmd(op, n_th, cache_size, db_path)
         cmd = get_wtperf_cmd(op, n_th, cache_size, db_path)
@@ -88,20 +95,23 @@ def run(mode, op, n_core, n_th, cache_size):
 
     print(cmd)
     res = subprocess.run(cmd.split(), env=my_env, capture_output=False)
+    #res = subprocess.run(cmd.split(), env=my_env, capture_output=True)
     #print("captured stdout: {}".format(res.stdout.decode()))
     #print("captured stderr: {}".format(res.stderr.decode()))
 
 
 #run("abt", "set", 1, 1, 1024*1024)
-#run("natve", "set", 1, 1, 1024*1024)
+run("natve", "set", 1, 1, 1024*1024)
+#run("io_uring", "get", 1, 1, "12G")
+#run("native", "get", 1, 1, "12G")
 
 #run("abt", "get", 1, 1, 1024*1024)
 #run("abt", "get", 1, 1, "12G")
 #run("abt", "get", 8, 2, "12G")
-run("abt", "get", 8, 64, "12G")
-run("native", "get", 8, 64, "12G")
+#run("abt", "get", 8, 128, "12G")
+#run("native", "get", 8, 64, "12G")
 #run("native", "get", 1, 32, "12G")
-run("pthpth", "get", 8, 64, "12G")
+#run("pthpth", "get", 8, 64, "12G")
 #run("abt", "get", 8, 64, "12G")
 #run("native", "get", 1, 1, "12G")
 #for i in range(0, 10):
@@ -117,20 +127,20 @@ run("pthpth", "get", 8, 64, "12G")
 #    for n_pth in [8,16,32,64,128]:
 #        run("abt", "get", n_core, n_pth, "12G")
 
-#for n_core in [8]:
-#    for n_pth in [16,32,64,128,256]:
-#        run("abt", "get", n_core, n_pth, "12G")
+# for n_core in [8]:
+#     for n_pth in [64,128,256]:
+#         run("abt", "get", n_core, n_pth, "12G")
 
-# for k in range(0, 16):
-#     for n_core in [8]:
-#         for n_pth in [32,64,128,256]:
-#             run("native", "get", n_core, n_pth, "12G")
-#     for n_core in [8]:
-#         for n_pth in [32,64,128,256]:
-#             run("abt", "get", n_core, n_pth, "12G")
-#     for n_core in [8]:
-#         for n_pth in [32,64,128,256]:
-#             run("pthpth", "get", n_core, n_pth, "12G")
+#for k in range(0, 4):
+#    for n_core in [1,2,4,8]:
+#        for n_pth in [32,64,128,256]:
+#            run("native", "get", n_core, n_pth, "12G")
+    # for n_core in [1,2,4,8]:
+    #     for n_pth in [32,64,128,256]:
+    #         run("abt", "get", n_core, n_pth, "12G")
+    # for n_core in [1,2,4,8]:
+    #     for n_pth in [32,64,128,256]:
+    #         run("pthpth", "get", n_core, n_pth, "12G")
         
 # for n_core in [1,2,4,8]:
 #     for n_pth in [8,16,32,64,128]:
