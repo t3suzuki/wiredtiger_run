@@ -9,9 +9,10 @@ MYLIB_PATH = "/home/tomoya-s/mountpoint2/tomoya-s/pthabt/newlib"
 
 def get_wtperf_cmd(op, n_th, cache_size, db_path):
     key_size = 32
-    val_size = 512
-    num = 250 * 1000 * 1000
-    duration = 240
+    val_size = 1024
+    #num = 250 * 1000 * 1000
+    num = 10 * 1000 * 1000
+    duration = 3
     
     if op == "set":
         create = "true"
@@ -23,6 +24,7 @@ conn_config="cache_size={cache_size},direct_io=(data,checkpoint),eviction=(threa
 table_config="type=file,leaf_page_max=4k,internal_page_max=4k,checksum=on"
 icount={num}
 key_sz={key_size}
+random_range={num}
 value_sz={val_size}
 report_interval=1
 run_time={duration}
@@ -30,7 +32,7 @@ populate_threads=1
 verbose=3
 create={create}
 threads=((count={n_th},reads=1))
-warmup=60
+warmup=3
 ''').format(session_max=n_th, create=create, n_th=n_th, num=num, key_size=key_size, val_size=val_size, duration=duration, cache_size=cache_size)
 
     cfg_filename = "wtperf.cfg"
@@ -45,8 +47,10 @@ warmup=60
 def run(mode, op, n_core, n_th, cache_size):
     if mode == "abt" or mode == "pthpth":
         db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_abt250m"
+        #db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_abt30m"
     else:
-        db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_native250m"
+        db_path = "/home/tomoya-s/mountpoint/tomoya-s/wt_native250m"
+        #db_path = "/home/tomoya-s/mountpoint2/tomoya-s/wt_native30m"
     
     if op == "set":
         print("We are modifying database {}. Are you Sure? (Y/N)".format(db_path))
@@ -57,7 +61,7 @@ def run(mode, op, n_core, n_th, cache_size):
     subprocess.run("sudo chcpu -d {}-39".format(n_core).split())
     
     my_env = os.environ.copy()
-    drive_ids = ["0000:05:00.0","0000:06:00.0"]
+    drive_ids = ["0000:0f:00.0","0000:0e:00.0"]
     if mode == "abt":
         mylib_build_cmd = "make -C {} ABT_PATH={} N_CORE={} ND={} USE_PREEMPT=1".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
         process = subprocess.run(mylib_build_cmd.split())
@@ -100,8 +104,8 @@ def run(mode, op, n_core, n_th, cache_size):
     #print("captured stderr: {}".format(res.stderr.decode()))
 
 
-#run("abt", "set", 1, 1, 1024*1024)
-run("natve", "set", 1, 1, 1024*1024)
+run("abt", "set", 1, 1, 1024*1024)
+#run("natve", "set", 1, 1, 1024*1024)
 #run("io_uring", "get", 1, 1, "12G")
 #run("native", "get", 1, 1, "12G")
 
@@ -109,7 +113,9 @@ run("natve", "set", 1, 1, 1024*1024)
 #run("abt", "get", 1, 1, "12G")
 #run("abt", "get", 8, 2, "12G")
 #run("abt", "get", 8, 128, "12G")
-#run("native", "get", 8, 64, "12G")
+#run("native", "get", 1, 64, "12G")
+#run("io_uring", "get", 1, 256, "12G")
+#run("io_uring", "get", 1, 1, "12G")
 #run("native", "get", 1, 32, "12G")
 #run("pthpth", "get", 8, 64, "12G")
 #run("abt", "get", 8, 64, "12G")
